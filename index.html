@@ -8,7 +8,6 @@
 </head>
 <body>
 
-  <!-- Header -->
   <header id="app-header">
     <span id="app-title">Room Planner</span>
     <div id="header-buttons">
@@ -17,24 +16,20 @@
     </div>
   </header>
 
-  <!-- Main -->
   <main id="app-main">
 
-    <!-- Canvas Area -->
     <section id="canvas-area">
       <canvas id="room-canvas"></canvas>
-
-      <!-- Zoom controls overlay -->
       <div id="zoom-controls">
-        <button id="btn-zoom-in"    title="Zoom in">+</button>
-        <span   id="zoom-label">100%</span>
-        <button id="btn-zoom-out"   title="Zoom out">−</button>
-        <button id="btn-zoom-reset" title="Reset zoom">⌂</button>
+        <button id="btn-zoom-in" title="Zoom in">+</button>
+        <span id="zoom-label">100%</span>
+        <button id="btn-zoom-out" title="Zoom out">&minus;</button>
+        <button id="btn-zoom-reset" title="Reset zoom">&#8962;</button>
       </div>
     </section>
 
-    <!-- Tools Panel -->
     <aside id="tools-panel">
+
       <button id="btn-edit-room" class="tool-btn primary">Edit Room</button>
 
       <div class="panel-section">
@@ -46,25 +41,27 @@
         </div>
       </div>
 
-      <!-- Delete button — shown only when a shape is selected -->
+      <!-- Shown when a shape is selected -->
       <button id="btn-delete-shape" class="tool-btn danger" style="display:none;">
         &#x1F5D1; Delete shape
       </button>
 
-      <div class="panel-section placeholder">
-        <div class="panel-label">Colours <span class="ph-tag">Phase 4</span></div>
+      <!-- Phase 4: Colours — shown when a shape is selected -->
+      <div id="colour-section" class="panel-section" style="display:none;">
+        <div class="panel-label">Colour</div>
+        <div id="colour-grid"></div>
       </div>
+
       <div class="panel-section placeholder">
         <div class="panel-label">Text <span class="ph-tag">Phase 5</span></div>
       </div>
       <div class="panel-section placeholder">
         <div class="panel-label">Draw <span class="ph-tag">Phase 6</span></div>
       </div>
-    </aside>
 
+    </aside>
   </main>
 
-  <!-- Footer -->
   <footer id="app-footer">Designed by Ben</footer>
 
   <script src="script.js"></script>
