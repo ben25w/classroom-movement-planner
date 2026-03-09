@@ -1,32 +1,43 @@
 /* ===========================
    Room Planner — script.js
-   Phase 1 + 2 + 3: Canvas, Shapes, Resize & Rotate
+   Phase 1+2+3 + 3.5: Full-room default, Zoom/Pan, Delete shape
    =========================== */
 
 (function () {
   'use strict';
 
-  // ── Canvas setup ──────────────────────────────────────
   const canvas = document.getElementById('room-canvas');
   const ctx    = canvas.getContext('2d');
 
-  // ── State ─────────────────────────────────────────────
-  let editMode      = false;
-  let room          = null;
-  let shapes        = [];
-  let selectedShape = null;
-  let activeShapeTool = null;
-  let drag          = null;
+  // ── Viewport / zoom state ─────────────────────────────
+  let zoom    = 1.0;
+  let panX    = 0;
+  let panY    = 0;
+  const MIN_ZOOM = 0.2;
+  const MAX_ZOOM = 5.0;
 
-  // room edit handles
+  // pan drag
+  let isPanning   = false;
+  let panStartX   = 0;
+  let panStartY   = 0;
+  let panOriginX  = 0;
+  let panOriginY  = 0;
+
+  // ── App state ─────────────────────────────────────────
+  let editMode        = false;
+  let room            = null;
+  let shapes          = [];
+  let selectedShape   = null;
+  let activeShapeTool = null;
+  let drag            = null;
+
   let cornerHandles = [];
   let edgeHandles   = [];
 
-  // constants
   const ROOM_HANDLE_R  = 7;
-  const SEL_HANDLE_R   = 6;   // resize corner handle radius
-  const ROT_HANDLE_R   = 6;   // rotation handle radius
-  const ROT_OFFSET     = 28;  // px above shape bounding box
+  const SEL_HANDLE_R   = 6;
+  const ROT_HANDLE_R   = 6;
+  const ROT_OFFSET     = 28;
   const MIN_SHAPE_SIZE = 20;
 
   const SHAPE_DEFAULTS = {
@@ -44,6 +55,9 @@
     canvas.addEventListener('pointermove',  onPointerMove);
     canvas.addEventListener('pointerup',    onPointerUp);
     canvas.addEventListener('pointerleave', onPointerUp);
+    canvas.addEventListener('wheel',        onWheel, { passive: false });
+
+    document.addEventListener('keydown', onKeyDown);
 
     document.getElementById('btn-edit-room').addEventListener('click', toggleEditMode);
     document.getElementById('btn-save').addEventListener('click', saveRoom);
@@ -53,34 +67,107 @@
     document.getElementById('btn-rect').addEventListener('click',   () => activateShapeTool('rect'));
     document.getElementById('btn-circle').addEventListener('click', () => activateShapeTool('circle'));
 
+    document.getElementById('btn-zoom-in').addEventListener('click',    () => zoomBy(1.25));
+    document.getElementById('btn-zoom-out').addEventListener('click',   () => zoomBy(0.8));
+    document.getElementById('btn-zoom-reset').addEventListener('click', resetZoom);
+    document.getElementById('btn-delete-shape').addEventListener('click', deleteSelected);
+
     loadRoom();
     draw();
   }
 
-  // ── Canvas resize ─────────────────────────────────────
+  // ── Canvas / resize ───────────────────────────────────
   function resizeCanvas () {
     const area = document.getElementById('canvas-area');
-    const w = area.clientWidth, h = area.clientHeight;
-    let frac = null;
-    if (room) frac = cornersToFractions(room, canvas.width, canvas.height);
-    canvas.width = w; canvas.height = h;
-    room = frac ? fractionsToCorners(frac, w, h) : defaultRoom(w, h);
+    canvas.width  = area.clientWidth;
+    canvas.height = area.clientHeight;
+    if (!room) {
+      room = defaultRoom(canvas.width, canvas.height);
+    }
     draw();
   }
   function onWindowResize () { resizeCanvas(); }
 
+  // Room fills the canvas with a small margin
   function defaultRoom (w, h) {
-    const size = Math.min(w, h) * 0.60;
-    const left = (w - size) / 2, top = (h - size) / 2;
+    const margin = 32;
     return [
-      { x: left,        y: top        },
-      { x: left + size, y: top        },
-      { x: left + size, y: top + size },
-      { x: left,        y: top + size }
+      { x: margin,     y: margin     },
+      { x: w - margin, y: margin     },
+      { x: w - margin, y: h - margin },
+      { x: margin,     y: h - margin }
     ];
   }
+
   function cornersToFractions (c, w, h) { return c.map(p => ({ fx: p.x/w, fy: p.y/h })); }
   function fractionsToCorners (f, w, h) { return f.map(p => ({ x: p.fx*w, y: p.fy*h })); }
+
+  // ── Zoom / Pan ────────────────────────────────────────
+  function zoomBy (factor, cx, cy) {
+    // cx/cy = canvas pixel coords to zoom around (defaults to canvas centre)
+    cx = cx ?? canvas.width  / 2;
+    cy = cy ?? canvas.height / 2;
+    const newZoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom * factor));
+    const scale   = newZoom / zoom;
+    panX = cx - scale * (cx - panX);
+    panY = cy - scale * (cy - panY);
+    zoom = newZoom;
+    updateZoomLabel();
+    draw();
+  }
+
+  function resetZoom () {
+    zoom = 1; panX = 0; panY = 0;
+    updateZoomLabel();
+    draw();
+  }
+
+  function updateZoomLabel () {
+    const el = document.getElementById('zoom-label');
+    if (el) el.textContent = Math.round(zoom * 100) + '%';
+  }
+
+  function onWheel (e) {
+    e.preventDefault();
+    const rect  = canvas.getBoundingClientRect();
+    const cx    = (e.clientX - rect.left) * (canvas.width  / rect.width);
+    const cy    = (e.clientY - rect.top)  * (canvas.height / rect.height);
+    const delta = e.deltaY < 0 ? 1.1 : 0.9;
+    zoomBy(delta, cx, cy);
+  }
+
+  // ── Coordinate helpers ────────────────────────────────
+  // Convert canvas pixel → world coords
+  function toWorld (px, py) {
+    return { x: (px - panX) / zoom, y: (py - panY) / zoom };
+  }
+  // Convert world → canvas pixel
+  function toCanvas (wx, wy) {
+    return { x: wx * zoom + panX, y: wy * zoom + panY };
+  }
+
+  // get pointer position in WORLD coords
+  function getPos (e) {
+    const rect   = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const src    = e.touches ? e.touches[0] : e;
+    const px = (src.clientX - rect.left) * scaleX;
+    const py = (src.clientY - rect.top)  * scaleY;
+    return toWorld(px, py);
+  }
+
+  // get pointer position in RAW canvas px (for pan)
+  function getRawPos (e) {
+    const rect   = canvas.getBoundingClientRect();
+    const scaleX = canvas.width  / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const src    = e.touches ? e.touches[0] : e;
+    return {
+      x: (src.clientX - rect.left) * scaleX,
+      y: (src.clientY - rect.top)  * scaleY
+    };
+  }
 
   // ── Room handles ──────────────────────────────────────
   function buildRoomHandles () {
@@ -95,6 +182,7 @@
   function activateShapeTool (type) {
     activeShapeTool = type;
     selectedShape   = null;
+    updateDeleteBtn();
     ['btn-square','btn-rect','btn-circle'].forEach(id =>
       document.getElementById(id).classList.remove('active'));
     document.getElementById({ square:'btn-square', rect:'btn-rect', circle:'btn-circle' }[type])
@@ -111,14 +199,40 @@
 
   function addShape (type, cx, cy) {
     const d = SHAPE_DEFAULTS[type];
-    const s = { id: Date.now(), type, x: cx - d.w/2, y: cy - d.h/2,
+    const s = { id: Date.now(), type,
+                x: cx - d.w/2, y: cy - d.h/2,
                 w: d.w, h: d.h, angle: 0, fill: '#ffffff' };
     shapes.push(s);
     selectedShape = s;
+    updateDeleteBtn();
     return s;
   }
 
-  // ── Room bounds & clamping ────────────────────────────
+  // ── Delete ────────────────────────────────────────────
+  function deleteSelected () {
+    if (!selectedShape) return;
+    shapes = shapes.filter(s => s !== selectedShape);
+    selectedShape = null;
+    updateDeleteBtn();
+    draw();
+  }
+
+  function onKeyDown (e) {
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      // Don't fire if user is typing in an input
+      if (document.activeElement.tagName === 'INPUT' ||
+          document.activeElement.tagName === 'TEXTAREA') return;
+      deleteSelected();
+    }
+  }
+
+  function updateDeleteBtn () {
+    const btn = document.getElementById('btn-delete-shape');
+    if (!btn) return;
+    btn.style.display = selectedShape ? 'block' : 'none';
+  }
+
+  // ── Room bounds & clamp ───────────────────────────────
   function roomBounds () {
     const xs = room.map(c => c.x), ys = room.map(c => c.y);
     return { left: Math.min(...xs), top: Math.min(...ys),
@@ -130,29 +244,22 @@
     s.y = Math.max(b.top,  Math.min(b.bottom - s.h, s.y));
   }
 
-  // ── Selection handle geometry ─────────────────────────
-  // Returns { corners: [{x,y,cursor,index}x4], rotate: {x,y} }
+  // ── Selection handles ─────────────────────────────────
   function getSelHandles (s) {
-    // unrotated corners in world space (relative to shape centre)
     const cx = s.x + s.w/2, cy = s.y + s.h/2;
     const hw = s.w/2, hh = s.h/2;
-    const localCorners = [
-      { lx: -hw, ly: -hh, index: 0 },   // TL
-      { lx:  hw, ly: -hh, index: 1 },   // TR
-      { lx:  hw, ly:  hh, index: 2 },   // BR
-      { lx: -hw, ly:  hh, index: 3 }    // BL
-    ];
-    const cursors = ['nwse-resize','nesw-resize','nwse-resize','nesw-resize'];
     const cos = Math.cos(s.angle), sin = Math.sin(s.angle);
-
+    const localCorners = [
+      { lx: -hw, ly: -hh, index: 0 },
+      { lx:  hw, ly: -hh, index: 1 },
+      { lx:  hw, ly:  hh, index: 2 },
+      { lx: -hw, ly:  hh, index: 3 }
+    ];
     const corners = localCorners.map(({ lx, ly, index }) => ({
       x: cx + lx*cos - ly*sin,
       y: cy + lx*sin + ly*cos,
-      cursor: cursors[index],
       index
     }));
-
-    // rotation handle: above TL-TR midpoint in local space → top-centre
     const rotLocal = { lx: 0, ly: -hh - ROT_OFFSET };
     return {
       corners,
@@ -163,44 +270,41 @@
     };
   }
 
-  // ── Hit testing ───────────────────────────────────────
-  function hitCircle (px, py, hx, hy, r) {
-    const dx = px-hx, dy = py-hy;
-    return dx*dx + dy*dy <= (r+4)*(r+4);
+  // ── Hit testing (all in WORLD coords) ────────────────
+  function hitCircleW (wx, wy, hx, hy, r) {
+    // r is in world units — but handles are drawn at fixed screen size
+    // so we hit-test in screen space by converting handle pos to canvas px
+    const hp = toCanvas(hx, hy);
+    const pp = toCanvas(wx, wy);  // actually we receive world, so same
+    const screenR = (r + 4) / zoom;   // expand hit radius to screen equiv
+    const dx = wx-hx, dy = wy-hy;
+    return dx*dx + dy*dy <= screenR*screenR;
   }
 
-  function hitRoomHandle (px, py, handles) {
+  function hitRoomHandle (wx, wy, handles) {
     for (let i = handles.length-1; i >= 0; i--) {
-      if (hitCircle(px, py, handles[i].x, handles[i].y, ROOM_HANDLE_R)) return i;
+      if (hitCircleW(wx, wy, handles[i].x, handles[i].y, ROOM_HANDLE_R)) return i;
     }
     return -1;
   }
 
-  // Hit-test resize/rotate handles on selected shape
-  // Returns { type:'resize'|'rotate', index? } or null
-  function hitSelHandle (px, py) {
+  function hitSelHandle (wx, wy) {
     if (!selectedShape) return null;
     const h = getSelHandles(selectedShape);
-    if (hitCircle(px, py, h.rotate.x, h.rotate.y, ROT_HANDLE_R+4)) {
-      return { type: 'rotate' };
-    }
+    if (hitCircleW(wx, wy, h.rotate.x, h.rotate.y, ROT_HANDLE_R)) return { type:'rotate' };
     for (const c of h.corners) {
-      if (hitCircle(px, py, c.x, c.y, SEL_HANDLE_R+4)) {
-        return { type: 'resize', index: c.index };
-      }
+      if (hitCircleW(wx, wy, c.x, c.y, SEL_HANDLE_R)) return { type:'resize', index: c.index };
     }
     return null;
   }
 
-  // Point-in-shape hit test (accounts for rotation)
-  function hitShape (px, py) {
+  function hitShape (wx, wy) {
     for (let i = shapes.length-1; i >= 0; i--) {
       const s = shapes[i];
       const cx = s.x + s.w/2, cy = s.y + s.h/2;
-      // rotate point into shape-local space
       const cos = Math.cos(-s.angle), sin = Math.sin(-s.angle);
-      const lx = (px-cx)*cos - (py-cy)*sin;
-      const ly = (px-cx)*sin + (py-cy)*cos;
+      const lx = (wx-cx)*cos - (wy-cy)*sin;
+      const ly = (wx-cx)*sin + (wy-cy)*cos;
       if (s.type === 'circle') {
         if ((lx/(s.w/2))*(lx/(s.w/2)) + (ly/(s.h/2))*(ly/(s.h/2)) <= 1) return s;
       } else {
@@ -211,17 +315,11 @@
   }
 
   // ── Pointer events ────────────────────────────────────
-  function getPos (e) {
-    const r = canvas.getBoundingClientRect();
-    const sx = canvas.width/r.width, sy = canvas.height/r.height;
-    const src = e.touches ? e.touches[0] : e;
-    return { x: (src.clientX - r.left)*sx, y: (src.clientY - r.top)*sy };
-  }
-
   function onPointerDown (e) {
     e.preventDefault();
     canvas.setPointerCapture(e.pointerId);
-    const { x, y } = getPos(e);
+    const raw = getRawPos(e);
+    const { x, y } = toWorld(raw.x, raw.y);
 
     // ── Place shape ──────────────────────────────────────
     if (activeShapeTool) {
@@ -229,6 +327,15 @@
       clampShapeToRoom(s);
       clearShapeTool();
       draw();
+      return;
+    }
+
+    // ── Middle mouse or space+drag = pan (also 2-finger) ─
+    if (e.button === 1 || e.altKey) {
+      isPanning = true;
+      panStartX = raw.x; panStartY = raw.y;
+      panOriginX = panX; panOriginY = panY;
+      canvas.style.cursor = 'grabbing';
       return;
     }
 
@@ -248,60 +355,66 @@
       }
     }
 
-    // ── Shape selection handles (resize / rotate) ────────
+    // ── Resize / rotate handles ──────────────────────────
     const sh = hitSelHandle(x, y);
     if (sh) {
       const s = selectedShape;
       if (sh.type === 'rotate') {
         const cx = s.x + s.w/2, cy = s.y + s.h/2;
-        drag = { type:'rotate', shape:s,
-                 startAngle: s.angle,
+        drag = { type:'rotate', shape:s, startAngle:s.angle,
                  startAtan: Math.atan2(y-cy, x-cx) };
       } else {
-        // resize: record which corner is "opposite" (anchor)
-        const h = getSelHandles(s);
+        const h   = getSelHandles(s);
         const opp = h.corners[(sh.index + 2) % 4];
-        drag = { type:'resize', shape:s, cornerIndex: sh.index,
+        drag = { type:'resize', shape:s, cornerIndex:sh.index,
                  startX:x, startY:y,
                  origX:s.x, origY:s.y, origW:s.w, origH:s.h,
-                 origAngle: s.angle,
-                 anchorX: opp.x, anchorY: opp.y };
+                 origAngle:s.angle, anchorX:opp.x, anchorY:opp.y };
       }
       return;
     }
 
-    // ── Shape drag ───────────────────────────────────────
+    // ── Shape drag / select ──────────────────────────────
     const hit = hitShape(x, y);
     if (hit) {
       selectedShape = hit;
       shapes = shapes.filter(s => s !== hit); shapes.push(hit);
       drag = { type:'shape', shape:hit, startX:x, startY:y,
                origX:hit.x, origY:hit.y };
+      updateDeleteBtn();
       draw();
       return;
     }
 
+    // ── Click empty = deselect or start pan ──────────────
     selectedShape = null;
+    updateDeleteBtn();
+    // Start pan on empty canvas
+    isPanning = true;
+    panStartX = raw.x; panStartY = raw.y;
+    panOriginX = panX; panOriginY = panY;
+    canvas.style.cursor = 'grabbing';
     draw();
   }
 
   function onPointerMove (e) {
-    const { x, y } = getPos(e);
+    const raw = getRawPos(e);
+    const { x, y } = toWorld(raw.x, raw.y);
+
+    // ── Pan ──────────────────────────────────────────────
+    if (isPanning) {
+      panX = panOriginX + (raw.x - panStartX);
+      panY = panOriginY + (raw.y - panStartY);
+      canvas.style.cursor = 'grabbing';
+      draw();
+      return;
+    }
 
     if (!drag) {
       // cursor hints
       if (activeShapeTool) { canvas.style.cursor = 'crosshair'; return; }
       const sh = hitSelHandle(x, y);
-      if (sh) {
-        canvas.style.cursor = sh.type === 'rotate' ? 'grab' : sh.type === 'resize'
-          ? getSelHandles(selectedShape).corners.find((c,i) => {
-              const h = getSelHandles(selectedShape); return false;
-            }) || 'nwse-resize'
-          : 'nwse-resize';
-        // simplify: just show crosshair for resize, grab for rotate
-        canvas.style.cursor = sh.type === 'rotate' ? 'grab' : 'nwse-resize';
-        return;
-      }
+      if (sh) { canvas.style.cursor = sh.type === 'rotate' ? 'grab' : 'nwse-resize'; return; }
       if (editMode) {
         const onH = hitRoomHandle(x, y, cornerHandles) !== -1 ||
                     hitRoomHandle(x, y, edgeHandles)   !== -1;
@@ -323,8 +436,8 @@
       const horiz = Math.abs(drag.origRoom[n].x-drag.origRoom[i].x) >
                     Math.abs(drag.origRoom[n].y-drag.origRoom[i].y);
       if (horiz) {
-        room[i] = { x:drag.origRoom[i].x, y:drag.origRoom[i].y+dy };
-        room[n] = { x:drag.origRoom[n].x, y:drag.origRoom[n].y+dy };
+        room[i] = { x:drag.origRoom[i].x,    y:drag.origRoom[i].y+dy };
+        room[n] = { x:drag.origRoom[n].x,    y:drag.origRoom[n].y+dy };
       } else {
         room[i] = { x:drag.origRoom[i].x+dx, y:drag.origRoom[i].y };
         room[n] = { x:drag.origRoom[n].x+dx, y:drag.origRoom[n].y };
@@ -336,55 +449,52 @@
     } else if (drag.type === 'rotate') {
       const s = drag.shape;
       const cx = s.x + s.w/2, cy = s.y + s.h/2;
-      const currentAtan = Math.atan2(y-cy, x-cx);
-      s.angle = drag.startAngle + (currentAtan - drag.startAtan);
+      s.angle = drag.startAngle + (Math.atan2(y-cy, x-cx) - drag.startAtan);
     } else if (drag.type === 'resize') {
-      const s = drag.shape;
-      // Vector from anchor to current mouse, in world space
+      const s   = drag.shape;
       const cos = Math.cos(-s.angle), sin = Math.sin(-s.angle);
-      // anchor to mouse in local shape space
       const wxm = x - drag.anchorX, wym = y - drag.anchorY;
       const lxm = wxm*cos - wym*sin;
       const lym = wxm*sin + wym*cos;
-
-      // Determine which corner is being dragged (0=TL,1=TR,2=BR,3=BL)
-      const ci = drag.cornerIndex;
-      // Signs: TL pulls left+up, TR pulls right+up, etc.
+      const ci   = drag.cornerIndex;
       const signX = (ci === 0 || ci === 3) ? -1 : 1;
       const signY = (ci === 0 || ci === 1) ? -1 : 1;
-
-      const newW = Math.max(MIN_SHAPE_SIZE, Math.abs(lxm));
-      const newH = Math.max(MIN_SHAPE_SIZE, Math.abs(lym));
-
-      s.w = newW;
-      s.h = newH;
-
-      // Reposition so anchor stays fixed
-      // anchor is at (ax, ay) in world — we want the opposite corner of the
-      // new bounding box to stay at the anchor point
-      const newHW = newW/2, newHH = newH/2;
+      const newW  = Math.max(MIN_SHAPE_SIZE, Math.abs(lxm));
+      const newH  = Math.max(MIN_SHAPE_SIZE, Math.abs(lym));
+      s.w = newW; s.h = newH;
       const cosA = Math.cos(s.angle), sinA = Math.sin(s.angle);
-      // opposite corner local coords are -signX*newHW, -signY*newHH
-      const oppLx = -signX * newHW, oppLy = -signY * newHH;
-      // new centre so that opposite corner lands on anchor
-      s.x = drag.anchorX + (-oppLx*cosA + oppLy*sinA) - newHW;
-      s.y = drag.anchorY + (-oppLx*sinA - oppLy*cosA) - newHH;
+      const oppLx = -signX * newW/2, oppLy = -signY * newH/2;
+      s.x = drag.anchorX + (-oppLx*cosA + oppLy*sinA) - newW/2;
+      s.y = drag.anchorY + (-oppLx*sinA - oppLy*cosA) - newH/2;
     }
 
     draw();
   }
 
   function onPointerUp () {
+    if (isPanning) {
+      isPanning = false;
+      canvas.style.cursor = 'default';
+    }
     drag = null;
-    canvas.style.cursor = 'default';
   }
 
   // ── Drawing ───────────────────────────────────────────
   function draw () {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.translate(panX, panY);
+    ctx.scale(zoom, zoom);
+
     drawRoom();
     shapes.forEach(drawShape);
-    if (editMode) { buildRoomHandles(); drawRoomHandles(); }
+    if (editMode) { buildRoomHandles(); drawRoomHandlesOnCanvas(); }
+
+    ctx.restore();
+
+    // Draw selection handles AFTER restoring, so they're always fixed pixel size
+    if (selectedShape) drawSelHandles(selectedShape);
   }
 
   function drawRoom () {
@@ -394,20 +504,17 @@
     for (let i = 1; i < 4; i++) ctx.lineTo(room[i].x, room[i].y);
     ctx.closePath();
     ctx.fillStyle = '#ffffff'; ctx.fill();
-    ctx.strokeStyle = '#222222'; ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.stroke();
+    ctx.strokeStyle = '#222222'; ctx.lineWidth = 3/zoom; ctx.lineJoin = 'round'; ctx.stroke();
   }
 
   function drawShape (s) {
-    const sel = s === selectedShape;
     const cx = s.x + s.w/2, cy = s.y + s.h/2;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(s.angle);
-
     ctx.fillStyle   = s.fill || '#ffffff';
     ctx.strokeStyle = '#222222';
-    ctx.lineWidth   = 2;
-
+    ctx.lineWidth   = 2/zoom;
     if (s.type === 'circle') {
       ctx.beginPath();
       ctx.ellipse(0, 0, s.w/2, s.h/2, 0, 0, Math.PI*2);
@@ -417,85 +524,75 @@
       ctx.rect(-s.w/2, -s.h/2, s.w, s.h);
       ctx.fill(); ctx.stroke();
     }
-
     ctx.restore();
-
-    // draw selection handles in world space
-    if (sel) drawSelHandles(s);
   }
 
+  // Room handles drawn inside the zoom transform
+  function drawRoomHandlesOnCanvas () {
+    const r = ROOM_HANDLE_R / zoom;
+    cornerHandles.forEach(h => drawWorldCircle(h.x, h.y, r, '#1a73e8', '#fff'));
+    edgeHandles.forEach(h   => drawWorldCircle(h.x, h.y, r, '#0d9488', '#fff'));
+  }
+
+  function drawWorldCircle (x, y, r, fill, stroke) {
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
+    ctx.fillStyle = fill; ctx.fill();
+    ctx.strokeStyle = stroke; ctx.lineWidth = 2/zoom; ctx.stroke();
+  }
+
+  // Selection handles drawn in SCREEN space (after ctx.restore)
   function drawSelHandles (s) {
     const h = getSelHandles(s);
-    const cx = s.x + s.w/2, cy = s.y + s.h/2;
 
-    // dashed outline
+    // dashed outline — draw in screen space by converting world→screen
     ctx.save();
-    ctx.translate(cx, cy);
+    const cx_s = toCanvas(s.x + s.w/2, s.y + s.h/2);
+    ctx.translate(cx_s.x, cx_s.y);
     ctx.rotate(s.angle);
     ctx.strokeStyle = '#1a73e8';
     ctx.lineWidth   = 1.5;
     ctx.setLineDash([5, 3]);
     if (s.type === 'circle') {
       ctx.beginPath();
-      ctx.ellipse(0, 0, s.w/2+6, s.h/2+6, 0, 0, Math.PI*2);
+      ctx.ellipse(0, 0, s.w/2*zoom+6, s.h/2*zoom+6, 0, 0, Math.PI*2);
       ctx.stroke();
     } else {
-      ctx.strokeRect(-s.w/2-5, -s.h/2-5, s.w+10, s.h+10);
+      ctx.strokeRect(-s.w/2*zoom-5, -s.h/2*zoom-5, s.w*zoom+10, s.h*zoom+10);
     }
     ctx.setLineDash([]);
     ctx.restore();
 
     // corner resize handles
     h.corners.forEach(c => {
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, SEL_HANDLE_R, 0, Math.PI*2);
-      ctx.fillStyle   = '#1a73e8';
-      ctx.fill();
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth   = 1.5;
-      ctx.stroke();
+      const sc = toCanvas(c.x, c.y);
+      drawScreenCircle(sc.x, sc.y, SEL_HANDLE_R, '#1a73e8', '#fff');
     });
 
-    // line from shape top-centre to rotation handle
-    const topCentre = {
-      x: cx + Math.cos(s.angle) * 0    - Math.sin(s.angle) * (-s.h/2),
-      y: cy + Math.sin(s.angle) * 0    + Math.cos(s.angle) * (-s.h/2)
+    // rotation handle + stem
+    const sr = toCanvas(h.rotate.x, h.rotate.y);
+    // top-centre in screen space
+    const tcw = {
+      x: s.x + s.w/2 - Math.sin(s.angle) * (-s.h/2),
+      y: s.y + s.h/2 + Math.cos(s.angle) * (-s.h/2)
     };
+    const tc = toCanvas(tcw.x, tcw.y);
     ctx.beginPath();
-    ctx.moveTo(topCentre.x, topCentre.y);
-    ctx.lineTo(h.rotate.x, h.rotate.y);
-    ctx.strokeStyle = '#1a73e8';
-    ctx.lineWidth   = 1.5;
-    ctx.setLineDash([3, 2]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    ctx.moveTo(tc.x, tc.y);
+    ctx.lineTo(sr.x, sr.y);
+    ctx.strokeStyle = '#1a73e8'; ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 2]); ctx.stroke(); ctx.setLineDash([]);
 
-    // rotation handle circle
-    ctx.beginPath();
-    ctx.arc(h.rotate.x, h.rotate.y, ROT_HANDLE_R, 0, Math.PI*2);
-    ctx.fillStyle   = '#fff';
-    ctx.fill();
-    ctx.strokeStyle = '#1a73e8';
-    ctx.lineWidth   = 2;
-    ctx.stroke();
-    // rotation arrow icon inside
+    drawScreenCircle(sr.x, sr.y, ROT_HANDLE_R, '#fff', '#1a73e8');
+    // rotation arrow
     ctx.save();
-    ctx.translate(h.rotate.x, h.rotate.y);
+    ctx.translate(sr.x, sr.y);
     ctx.rotate(s.angle);
-    ctx.strokeStyle = '#1a73e8';
-    ctx.lineWidth   = 1.5;
-    ctx.beginPath();
-    ctx.arc(0, 0, 3, -Math.PI*0.7, Math.PI*0.7);
-    ctx.stroke();
+    ctx.strokeStyle = '#1a73e8'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, 3, -Math.PI*0.7, Math.PI*0.7); ctx.stroke();
     ctx.restore();
   }
 
-  function drawRoomHandles () {
-    cornerHandles.forEach(h => drawCircleHandle(h.x, h.y, '#1a73e8', '#fff', ROOM_HANDLE_R));
-    edgeHandles.forEach(h   => drawCircleHandle(h.x, h.y, '#0d9488', '#fff', ROOM_HANDLE_R));
-  }
-
-  function drawCircleHandle (x, y, fill, stroke, r) {
+  function drawScreenCircle (x, y, r, fill, stroke) {
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2);
     ctx.fillStyle = fill; ctx.fill();
     ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.stroke();
@@ -510,13 +607,14 @@
   }
 
   // ── Persistence ───────────────────────────────────────
-  const STORAGE_KEY = 'room-planner-v3';
+  const STORAGE_KEY = 'room-planner-v4';
 
   function saveRoom () {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         room: cornersToFractions(room, canvas.width, canvas.height),
-        shapes
+        shapes,
+        zoom, panX, panY
       }));
       flashSaveButton();
     } catch (err) { console.warn('Save failed:', err); }
@@ -531,6 +629,8 @@
         room = fractionsToCorners(data.room, canvas.width, canvas.height);
       if (data.shapes && Array.isArray(data.shapes))
         shapes = data.shapes.map(s => ({ angle: 0, ...s }));
+      if (data.zoom)  { zoom = data.zoom; panX = data.panX||0; panY = data.panY||0; }
+      updateZoomLabel();
     } catch (err) { console.warn('Load failed:', err); }
   }
 
