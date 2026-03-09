@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
   <header id="app-header">
     <span id="app-title">Room Planner</span>
     <div id="header-buttons">
@@ -17,7 +16,6 @@
   </header>
 
   <main id="app-main">
-
     <section id="canvas-area">
       <canvas id="room-canvas"></canvas>
       <div id="zoom-controls">
@@ -29,9 +27,9 @@
     </section>
 
     <aside id="tools-panel">
-
       <button id="btn-edit-room" class="tool-btn primary">Edit Room</button>
 
+      <!-- Shapes -->
       <div class="panel-section">
         <div class="panel-label">Shapes</div>
         <div class="shape-buttons">
@@ -41,29 +39,71 @@
         </div>
       </div>
 
-      <!-- Shown when a shape is selected -->
-      <button id="btn-delete-shape" class="tool-btn danger" style="display:none;">
-        &#x1F5D1; Delete shape
-      </button>
+      <!-- Delete (shown when shape or label selected) -->
+      <button id="btn-delete-shape" class="tool-btn danger" style="display:none;">&#x1F5D1; Delete</button>
 
-      <!-- Phase 4: Colours — shown when a shape is selected -->
+      <!-- Colours (shown when shape selected) -->
       <div id="colour-section" class="panel-section" style="display:none;">
         <div class="panel-label">Colour</div>
         <div id="colour-grid"></div>
       </div>
 
-      <div class="panel-section placeholder">
-        <div class="panel-label">Text <span class="ph-tag">Phase 5</span></div>
+      <!-- Text (Phase 5) -->
+      <div class="panel-section">
+        <div class="panel-label">Text</div>
+        <button id="btn-add-text" class="tool-btn">&#9998; Add text</button>
       </div>
-      <div class="panel-section placeholder">
-        <div class="panel-label">Draw <span class="ph-tag">Phase 6</span></div>
+
+      <!-- Text selected controls (shown when label selected) -->
+      <div id="text-selected-section" class="panel-section" style="display:none;">
+        <div class="panel-label">Text options</div>
+        <div class="text-controls">
+          <label class="ctrl-row">
+            <span>Size</span>
+            <input type="range" id="text-size" min="10" max="60" value="16" />
+          </label>
+          <label class="ctrl-row">
+            <span>Bold</span>
+            <input type="checkbox" id="text-bold" />
+          </label>
+          <label class="ctrl-row">
+            <span>Colour</span>
+            <input type="color" id="text-colour" value="#222222" />
+          </label>
+          <button id="btn-edit-label" class="tool-btn">&#9998; Edit text</button>
+        </div>
+      </div>
+
+      <!-- Draw (Phase 6) -->
+      <div class="panel-section">
+        <div class="panel-label">Draw</div>
+        <div class="draw-tools">
+          <button id="btn-draw"   class="tool-btn">&#9998; Pen</button>
+          <button id="btn-eraser" class="tool-btn">&#9675; Eraser</button>
+        </div>
+      </div>
+
+      <!-- Draw options (shown when draw/eraser active) -->
+      <div id="draw-section" class="panel-section" style="display:none;">
+        <div class="panel-label">Pen options</div>
+        <div class="text-controls">
+          <label class="ctrl-row">
+            <span>Colour</span>
+            <input type="color" id="draw-colour" value="#222222" />
+          </label>
+          <label class="ctrl-row">
+            <span>Size</span>
+            <input type="range" id="draw-size" min="1" max="30" value="4" />
+          </label>
+          <span id="draw-size-label" class="size-label">4px</span>
+          <button id="btn-clear-drawing" class="tool-btn danger">&#x1F5D1; Clear drawing</button>
+        </div>
       </div>
 
     </aside>
   </main>
 
   <footer id="app-footer">Designed by Ben</footer>
-
   <script src="script.js"></script>
 </body>
 </html>
