@@ -1,140 +1,46 @@
-/* ===========================
-   Room Planner — style.css
-   Phase 4 update: colour swatches
-   =========================== */
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html, body {
-  width: 100%; height: 100%; overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #f5f5f5; color: #333;
-}
-
-/* ── Header ── */
-#app-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 16px; height: 48px;
-  background: #fff; border-bottom: 1px solid #e0e0e0;
-  flex-shrink: 0; z-index: 10; position: relative;
-}
-#app-title { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.02em; color: #222; }
-#header-buttons { display: flex; gap: 8px; }
-#header-buttons button {
-  padding: 6px 16px; border: 1px solid #ccc; border-radius: 6px;
-  background: #fff; font-size: 0.85rem; cursor: pointer; color: #333;
-  transition: background 0.15s, border-color 0.15s;
-}
-#header-buttons button:hover { background: #f0f0f0; border-color: #aaa; }
-
-/* ── Layout ── */
-body { display: flex; flex-direction: column; }
-#app-main { display: flex; flex: 1; overflow: hidden; }
-
-/* ── Canvas ── */
-#canvas-area {
-  flex: 1; display: flex; align-items: stretch; justify-content: stretch;
-  background: #e8e8e8; position: relative;
-}
-#room-canvas { display: block; width: 100%; height: 100%; cursor: default; }
-
-/* ── Zoom controls ── */
-#zoom-controls {
-  position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-  display: flex; align-items: center; gap: 4px;
-  background: rgba(255,255,255,0.92); border: 1px solid #ddd;
-  border-radius: 8px; padding: 5px 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.12); z-index: 20; user-select: none;
-}
-#zoom-controls button {
-  width: 28px; height: 28px; border: 1px solid #ccc; border-radius: 5px;
-  background: #fff; font-size: 1rem; line-height: 1; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.1s; color: #333; font-weight: 600;
-}
-#zoom-controls button:hover { background: #f0f0f0; }
-#zoom-label { font-size: 0.78rem; font-weight: 600; color: #555; min-width: 38px; text-align: center; }
-
-/* ── Tools Panel ── */
-#tools-panel {
-  width: 220px; flex-shrink: 0; background: #fff;
-  border-left: 1px solid #e0e0e0;
-  display: flex; flex-direction: column; gap: 0;
-  padding: 16px 12px; overflow-y: auto;
-}
-
-.tool-btn {
-  width: 100%; padding: 9px 12px; border-radius: 7px; border: 1px solid #ccc;
-  background: #fff; font-size: 0.9rem; cursor: pointer; text-align: center;
-  transition: background 0.15s; margin-bottom: 4px;
-}
-.tool-btn:hover { background: #f0f0f0; }
-.tool-btn.primary { background: #1a73e8; color: #fff; border-color: #1a73e8; font-weight: 600; }
-.tool-btn.primary:hover  { background: #1558b0; border-color: #1558b0; }
-.tool-btn.primary.active { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
-.tool-btn.danger {
-  background: #fff0f0; color: #c0392b; border-color: #f5c6c6; font-weight: 500; margin-top: 10px;
-}
-.tool-btn.danger:hover { background: #ffe0e0; border-color: #e0a0a0; }
-
-/* ── Panel Sections ── */
-.panel-section { margin-top: 18px; padding-top: 14px; border-top: 1px solid #ececec; }
-.panel-label {
-  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.06em; color: #888; margin-bottom: 10px;
-  display: flex; align-items: center; gap: 6px;
-}
-.ph-tag {
-  font-size: 0.65rem; background: #f0f0f0; color: #aaa; border-radius: 4px;
-  padding: 1px 5px; font-weight: 500; text-transform: none; letter-spacing: 0;
-}
-.placeholder { opacity: 0.5; }
-
-/* ── Shape Buttons ── */
-.shape-buttons { display: flex; gap: 8px; }
-.shape-btn {
-  flex: 1; aspect-ratio: 1; border: 1px solid #ccc; border-radius: 6px;
-  background: #fafafa; font-size: 1.3rem; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, border-color 0.15s; color: #444;
-}
-.shape-btn:hover { background: #e8f0fe; border-color: #1a73e8; color: #1a73e8; }
-.shape-btn.active { background: #e8f0fe; border-color: #1a73e8; color: #1a73e8; }
-
-/* ── Colour Grid (Phase 4) ── */
-#colour-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-}
-
-.colour-swatch {
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.1s, box-shadow 0.1s;
-  outline: none;
-  position: relative;
-}
-.colour-swatch:hover {
-  transform: scale(1.12);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-.colour-swatch.active {
-  transform: scale(1.12);
-  box-shadow: 0 0 0 3px #1a73e8, 0 2px 8px rgba(0,0,0,0.15);
-}
-
-/* ── Footer ── */
-#app-footer {
-  height: 28px; display: flex; align-items: center; justify-content: center;
-  font-size: 0.72rem; color: #bbb; background: #fff;
-  border-top: 1px solid #e0e0e0; flex-shrink: 0; letter-spacing: 0.03em;
-}
-
-/* ── Print ── */
-@media print {
-  #app-header, #tools-panel, #app-footer, #zoom-controls { display: none !important; }
-  #canvas-area { width: 100vw; height: 100vh; }
-}
+/* Room Planner — style.css | Phase 5+6 update */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f5;color:#333;}
+#app-header{display:flex;align-items:center;justify-content:space-between;padding:0 16px;height:48px;background:#fff;border-bottom:1px solid #e0e0e0;flex-shrink:0;z-index:10;position:relative;}
+#app-title{font-size:1.1rem;font-weight:600;letter-spacing:.02em;color:#222;}
+#header-buttons{display:flex;gap:8px;}
+#header-buttons button{padding:6px 16px;border:1px solid #ccc;border-radius:6px;background:#fff;font-size:.85rem;cursor:pointer;color:#333;transition:background .15s,border-color .15s;}
+#header-buttons button:hover{background:#f0f0f0;border-color:#aaa;}
+body{display:flex;flex-direction:column;}
+#app-main{display:flex;flex:1;overflow:hidden;}
+#canvas-area{flex:1;display:flex;align-items:stretch;justify-content:stretch;background:#e8e8e8;position:relative;}
+#room-canvas{display:block;width:100%;height:100%;cursor:default;}
+#zoom-controls{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.92);border:1px solid #ddd;border-radius:8px;padding:5px 10px;box-shadow:0 2px 8px rgba(0,0,0,.12);z-index:20;user-select:none;}
+#zoom-controls button{width:28px;height:28px;border:1px solid #ccc;border-radius:5px;background:#fff;font-size:1rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .1s;color:#333;font-weight:600;}
+#zoom-controls button:hover{background:#f0f0f0;}
+#zoom-label{font-size:.78rem;font-weight:600;color:#555;min-width:38px;text-align:center;}
+#tools-panel{width:220px;flex-shrink:0;background:#fff;border-left:1px solid #e0e0e0;display:flex;flex-direction:column;gap:0;padding:16px 12px;overflow-y:auto;}
+.tool-btn{width:100%;padding:9px 12px;border-radius:7px;border:1px solid #ccc;background:#fff;font-size:.9rem;cursor:pointer;text-align:center;transition:background .15s;margin-bottom:4px;}
+.tool-btn:hover{background:#f0f0f0;}
+.tool-btn.primary{background:#1a73e8;color:#fff;border-color:#1a73e8;font-weight:600;}
+.tool-btn.primary:hover{background:#1558b0;border-color:#1558b0;}
+.tool-btn.primary.active{background:#e8f0fe;color:#1a73e8;border-color:#1a73e8;}
+.tool-btn.active{background:#e8f0fe;color:#1a73e8;border-color:#1a73e8;}
+.tool-btn.danger{background:#fff0f0;color:#c0392b;border-color:#f5c6c6;font-weight:500;margin-top:6px;}
+.tool-btn.danger:hover{background:#ffe0e0;border-color:#e0a0a0;}
+.panel-section{margin-top:16px;padding-top:12px;border-top:1px solid #ececec;}
+.panel-label{font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ph-tag{font-size:.65rem;background:#f0f0f0;color:#aaa;border-radius:4px;padding:1px 5px;font-weight:500;text-transform:none;letter-spacing:0;}
+.placeholder{opacity:.5;}
+.shape-buttons{display:flex;gap:8px;}
+.shape-btn{flex:1;aspect-ratio:1;border:1px solid #ccc;border-radius:6px;background:#fafafa;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;color:#444;}
+.shape-btn:hover,.shape-btn.active{background:#e8f0fe;border-color:#1a73e8;color:#1a73e8;}
+#colour-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;}
+.colour-swatch{width:100%;aspect-ratio:1;border-radius:6px;cursor:pointer;transition:transform .1s,box-shadow .1s;outline:none;}
+.colour-swatch:hover{transform:scale(1.12);box-shadow:0 2px 8px rgba(0,0,0,.2);}
+.colour-swatch.active{transform:scale(1.12);box-shadow:0 0 0 3px #1a73e8,0 2px 8px rgba(0,0,0,.15);}
+.text-controls{display:flex;flex-direction:column;gap:8px;}
+.ctrl-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:.82rem;color:#555;}
+.ctrl-row input[type=range]{flex:1;accent-color:#1a73e8;}
+.ctrl-row input[type=color]{width:32px;height:24px;border:1px solid #ccc;border-radius:4px;cursor:pointer;padding:0;}
+.ctrl-row input[type=checkbox]{width:16px;height:16px;accent-color:#1a73e8;cursor:pointer;}
+.size-label{font-size:.75rem;color:#888;text-align:right;}
+.draw-tools{display:flex;gap:6px;}
+.draw-tools .tool-btn{flex:1;margin-bottom:0;}
+#app-footer{height:28px;display:flex;align-items:center;justify-content:center;font-size:.72rem;color:#bbb;background:#fff;border-top:1px solid #e0e0e0;flex-shrink:0;letter-spacing:.03em;}
+@media print{#app-header,#tools-panel,#app-footer,#zoom-controls{display:none!important;}#canvas-area{width:100vw;height:100vh;}}
