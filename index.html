@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Room Planner</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header id="app-header">
+    <span id="app-title">Room Planner</span>
+    <div id="header-buttons">
+      <button id="btn-save">Save</button>
+      <button id="btn-print">Print</button>
+    </div>
+  </header>
+
+  <main id="app-main">
+    <section id="canvas-area">
+      <canvas id="room-canvas"></canvas>
+    </section>
+
+    <aside id="tools-panel">
+      <button id="btn-edit-room" class="tool-btn primary">Edit Room</button>
+
+      <div class="panel-section">
+        <div class="panel-label">Shapes</div>
+        <div class="shape-buttons">
+          <button class="shape-btn" id="btn-square" title="Square">&#9633;</button>
+          <button class="shape-btn" id="btn-rect" title="Rectangle">&#9645;</button>
+          <button class="shape-btn" id="btn-circle" title="Circle">&#9675;</button>
+        </div>
+      </div>
+
+      <div class="panel-section placeholder">
+        <div class="panel-label">Colours <span class="ph-tag">Phase 4</span></div>
+      </div>
+      <div class="panel-section placeholder">
+        <div class="panel-label">Text <span class="ph-tag">Phase 5</span></div>
+      </div>
+      <div class="panel-section placeholder">
+        <div class="panel-label">Draw <span class="ph-tag">Phase 6</span></div>
+      </div>
+    </aside>
+  </main>
+
+  <footer id="app-footer">Designed by Ben</footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
