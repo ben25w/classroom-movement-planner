@@ -1,6 +1,6 @@
 /* ===========================
    Room Planner — style.css
-   Phase 1
+   Phase 3.5 update
    =========================== */
 
 *, *::before, *::after {
@@ -28,6 +28,8 @@ html, body {
   background: #fff;
   border-bottom: 1px solid #e0e0e0;
   flex-shrink: 0;
+  z-index: 10;
+  position: relative;
 }
 
 #app-title {
@@ -52,7 +54,6 @@ html, body {
   color: #333;
   transition: background 0.15s, border-color 0.15s;
 }
-
 #header-buttons button:hover {
   background: #f0f0f0;
   border-color: #aaa;
@@ -87,6 +88,52 @@ body {
   cursor: default;
 }
 
+/* ── Zoom controls overlay ── */
+#zoom-controls {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 5px 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 20;
+  user-select: none;
+}
+
+#zoom-controls button {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+  color: #333;
+  font-weight: 600;
+}
+#zoom-controls button:hover {
+  background: #f0f0f0;
+}
+
+#zoom-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #555;
+  min-width: 38px;
+  text-align: center;
+}
+
 /* ── Tools Panel ── */
 #tools-panel {
   width: 220px;
@@ -112,10 +159,7 @@ body {
   transition: background 0.15s;
   margin-bottom: 4px;
 }
-
-.tool-btn:hover {
-  background: #f0f0f0;
-}
+.tool-btn:hover { background: #f0f0f0; }
 
 .tool-btn.primary {
   background: #1a73e8;
@@ -123,17 +167,17 @@ body {
   border-color: #1a73e8;
   font-weight: 600;
 }
+.tool-btn.primary:hover  { background: #1558b0; border-color: #1558b0; }
+.tool-btn.primary.active { background: #e8f0fe; color: #1a73e8; border-color: #1a73e8; }
 
-.tool-btn.primary:hover {
-  background: #1558b0;
-  border-color: #1558b0;
+.tool-btn.danger {
+  background: #fff0f0;
+  color: #c0392b;
+  border-color: #f5c6c6;
+  font-weight: 500;
+  margin-top: 10px;
 }
-
-.tool-btn.primary.active {
-  background: #e8f0fe;
-  color: #1a73e8;
-  border-color: #1a73e8;
-}
+.tool-btn.danger:hover { background: #ffe0e0; border-color: #e0a0a0; }
 
 /* ── Panel Sections ── */
 .panel-section {
@@ -165,9 +209,7 @@ body {
   letter-spacing: 0;
 }
 
-.placeholder {
-  opacity: 0.5;
-}
+.placeholder { opacity: 0.5; }
 
 /* ── Shape Buttons ── */
 .shape-buttons {
@@ -189,18 +231,8 @@ body {
   transition: background 0.15s, border-color 0.15s;
   color: #444;
 }
-
-.shape-btn:hover {
-  background: #e8f0fe;
-  border-color: #1a73e8;
-  color: #1a73e8;
-}
-
-.shape-btn.active {
-  background: #e8f0fe;
-  border-color: #1a73e8;
-  color: #1a73e8;
-}
+.shape-btn:hover { background: #e8f0fe; border-color: #1a73e8; color: #1a73e8; }
+.shape-btn.active { background: #e8f0fe; border-color: #1a73e8; color: #1a73e8; }
 
 /* ── Footer ── */
 #app-footer {
@@ -218,13 +250,6 @@ body {
 
 /* ── Print ── */
 @media print {
-  #app-header,
-  #tools-panel,
-  #app-footer {
-    display: none !important;
-  }
-  #canvas-area {
-    width: 100vw;
-    height: 100vh;
-  }
+  #app-header, #tools-panel, #app-footer, #zoom-controls { display: none !important; }
+  #canvas-area { width: 100vw; height: 100vh; }
 }
