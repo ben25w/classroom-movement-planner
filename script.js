@@ -23,11 +23,13 @@
      canvas.addEventListener('pointermove',onPointerMove);
      canvas.addEventListener('pointerup',onPointerUp);
      canvas.addEventListener('pointerleave',onPointerUp);
+       
      canvas.addEventListener('wheel',onWheel,{passive:false});
      document.addEventListener('keydown',onKeyDown);
      document.getElementById('btn-edit-room').addEventListener('click',toggleEditMode);
      document.getElementById('btn-save').addEventListener('click',saveRoom);
      document.getElementById('btn-print').addEventListener('click',printRoom);
+       document.getElementById('btn-new').addEventListener('click',newRoom);
      document.getElementById('btn-square').addEventListener('click',()=>activateShapeTool('square'));
      document.getElementById('btn-rect').addEventListener('click',()=>activateShapeTool('rect'));
      document.getElementById('btn-circle').addEventListener('click',()=>activateShapeTool('circle'));
@@ -249,5 +251,22 @@
      printWin.document.close();
  }
 
+function newRoom(){
+      if(!confirm('Start a new layout? This will clear everything on the canvas.'))return;
+        shapes=[];labels=[];strokes=[];
+          room=defaultRoom(canvas.width,canvas.height);
+            selectedShape=null;selectedLabel=null;
+              editMode=false;
+                clearAllTools();
+                  hasUnsavedChanges=false;
+                    zoom=1;panX=0;panY=0;
+                      updateZoomLabel();
+                        updateSelectionUI();
+                          localStorage.removeItem(STORAGE_KEY);
+                            const btn=document.getElementById('btn-save');
+                              if(btn){btn.textContent='Save';btn.style.color='';btn.style.fontWeight='';btn.style.borderColor='';}
+                                draw();
+                                }
+}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
            })();
